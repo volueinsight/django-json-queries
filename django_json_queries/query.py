@@ -226,10 +226,18 @@ class Query(metaclass=QueryBase):
     def __init__(self, query):
         self.condition = self.resolve_condition(query)
 
+    @property
+    def is_valid(self):
+        """
+        Check if this query is valid.
+        """
+        return self.condition.is_valid()
+
     def get_queryset(self):
         """
         Get a queryset of the objects that match this query.
         """
+        assert self.is_valid, 'Cannot get queryset from invalid query'
         return self.condition.filter(self._meta.queryset)
 
     @classmethod
@@ -266,6 +274,10 @@ class Query(metaclass=QueryBase):
 
         :param query: The query to resolve
         """
+        # Copy the query, to make sure we don't modify the original query object
+        query = query.copy()
+
+        # Locate the query class
         kind = query.pop('kind', None)
         if not kind:
             raise ValueError('Condition kind not specified')
@@ -273,4 +285,5 @@ class Query(metaclass=QueryBase):
         if not Condition:
             raise ValueError('Unsupported condition: %s' % kind)
 
+        # Return query object
         return Condition(query=self, **query)

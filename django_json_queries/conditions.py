@@ -50,6 +50,15 @@ class AndCondition(Condition):
 
         self.conditions = [self.query.resolve_condition(c) for c in conditions]
 
+    def is_valid(self):
+        """
+        Validate that the provided data is valid.
+        """
+        def reduce_bool(a, b):
+            return a and b
+
+        return reduce(reduce_bool, [c.is_valid() for c in self.conditions])
+
     def annotate(self, queryset):
         """
         Allow subqueries to add their annotations
@@ -76,6 +85,15 @@ class OrCondition(Condition):
             'Conditions must be a list with at least one element'
 
         self.conditions = [self.query.resolve_condition(c) for c in conditions]
+
+    def is_valid(self):
+        """
+        Validate that the provided data is valid.
+        """
+        def reduce_bool(a, b):
+            return a and b
+
+        return reduce(reduce_bool, [c.is_valid() for c in self.conditions])
 
     def annotate(self, queryset):
         """
@@ -107,6 +125,16 @@ class LookupCondition(Condition):
         self.field = getattr(self.query, field)
         self.lookup = lookup
         self.value = value
+
+    def is_valid(self):
+        """
+        Validate that the provided data is valid.
+        """
+        try:
+            self.field.validate(self.value, self.lookup)
+        except:
+            return False
+        return True
 
     def get_filter(self):
         field = '%s__%s' % (self.field.model_name, self.lookup)

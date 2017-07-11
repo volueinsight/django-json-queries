@@ -58,7 +58,7 @@ class Field(metaclass=FieldBase):
             value_type=self.value_type,
         )
 
-    def validate(self, value):
+    def validate(self, value, lookup):
         """
         Basic field validation. This method checks that the input type is of the
         specified class for this field. Subclasses should override this method
@@ -134,8 +134,8 @@ class RangeFieldBase(FieldBase):
 
 
 class RangeField(Field, metaclass=RangeFieldBase):
-    def validate(self, value):
-        super().validate(value)
+    def validate(self, value, lookup):
+        super().validate(value, lookup)
 
         # Validate the the value is within the allowed range
         if not value in self.value_range:
@@ -190,8 +190,8 @@ class ChoiceField(Field, metaclass=ChoiceFieldBase):
         desc['choices'] = cls.choices
         return desc
 
-    def validate(self, value):
-        super().validate(value)
+    def validate(self, value, lookup):
+        super().validate(value, lookup)
 
         # Validate that the given value is one of the allowed ones
         if not value in self.keys:
@@ -222,9 +222,9 @@ class DateField(Field):
     value_type = 'date'
     input_type = str
 
-    def validate(self, value):
+    def validate(self, value, lookup):
         # Let super validate the value type
-        super().validate(value)
+        super().validate(value, lookup)
 
         # Check if a duration was provided
         if is_duration(value):
@@ -257,9 +257,9 @@ class TimeField(Field):
     value_type = 'time'
     input_type = str
 
-    def validate(self, value):
+    def validate(self, value, lookup):
         # Let super validate the value type
-        super().validate(value)
+        super().validate(value, lookup)
 
         # Try to parse as a time
         try:
@@ -275,9 +275,9 @@ class DateTimeField(Field):
     value_type = 'datetime'
     input_type = str
 
-    def validate(self, value):
+    def validate(self, value, lookup):
         # Let super validate the value type
-        super().validate(value)
+        super().validate(value, lookup)
 
         # Check if a duration was provided
         if is_duration(value):

@@ -34,7 +34,7 @@ def test_integer_field():
     assert hasattr(TestQuery, 'field'), \
         'field attribute should be set on query'
     assert isinstance(TestQuery.field, fields.IntegerField), \
-        'field instance should be StringField'
+        'field instance should be IntegerField'
 
 
 def test_float_field():
@@ -49,7 +49,7 @@ def test_float_field():
     assert hasattr(TestQuery, 'field'), \
         'field attribute should be set on query'
     assert isinstance(TestQuery.field, fields.FloatField), \
-        'field instance should be StringField'
+        'field instance should be FloatField'
 
 
 def test_boolean_field():
@@ -64,7 +64,7 @@ def test_boolean_field():
     assert hasattr(TestQuery, 'field'), \
         'field attribute should be set on query'
     assert isinstance(TestQuery.field, fields.BooleanField), \
-        'field instance should be StringField'
+        'field instance should be BooleanField'
 
 
 def test_auto_field():
@@ -79,4 +79,34 @@ def test_auto_field():
     assert hasattr(TestQuery, 'field'), \
         'field attribute should be set on query'
     assert isinstance(TestQuery.field, fields.IntegerField), \
-        'field instance should be StringField'
+        'field instance should be IntegerField'
+
+
+def test_datetime_field():
+    class DateTimeTestModel(models.Model):
+        field = models.DateTimeField()
+
+    class TestQuery(Query):
+        class Meta:
+            model = DateTimeTestModel
+            fields = ['field']
+
+    assert hasattr(TestQuery, 'field'), \
+        'field attribute should be set on query'
+    assert isinstance(TestQuery.field, fields.DateTimeField), \
+        'field instance should be DateTimeField'
+
+
+def test_datetime__year_field():
+    class DateTimeYearTestModel(models.Model):
+        field = models.DateTimeField()
+
+    class TestQuery(Query):
+        class Meta:
+            model = DateTimeYearTestModel
+            fields = ['field__year']
+
+    assert hasattr(TestQuery, 'field__year'), \
+        'field attribute should be set on query'
+    assert isinstance(TestQuery.field__year, fields.YearField), \
+        'field instance should be YearField'

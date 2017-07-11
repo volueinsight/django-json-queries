@@ -18,6 +18,9 @@ from .test_fields import run_test
     ('2017-01-01', 'exact', True),
     ('2000-13-01', 'exact', False),
     ('2000-02-30', 'exact', False),
+    ('P-1Y', 'exact', True),
+    ('P-1M', 'exact', True),
+    ('P-1D', 'exact', True),
 ])
 def test_date_field(input, lookup, should_succeed):
     run_test(DateField, input, lookup, should_succeed)
@@ -57,6 +60,9 @@ def test_time_field(input, lookup, should_succeed):
     ('2017-01-01T00:00:00Z', 'exact', True),
     ('2017-01-01T00:00:00+0000', 'exact', True),
     ('2017-01-01T00:00:00+0200', 'exact', True),
+    ('P-1Y', 'exact', True),
+    ('P-1M', 'exact', True),
+    ('P-1D', 'exact', True),
 ])
 def test_datetime_field(input, lookup, should_succeed):
     run_test(DateTimeField, input, lookup, should_succeed)

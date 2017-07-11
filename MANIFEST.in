@@ -1,0 +1,9 @@
+include LICENSE
+include CHANGES.md
+include README.md
+recursive-include docs *
+recursive-include requirements *
+recursive-include tests *
+prune docs/_build
+global-exclude __pycache__
+global-exclude *.py[co]

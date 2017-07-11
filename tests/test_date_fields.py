@@ -10,156 +10,156 @@ from django_json_queries.fields import (
 from .test_fields import run_test
 
 
-@pytest.mark.parametrize('input,should_succeed', [
-    ('bla', False),
-    ('1', False),
-    (-1, False),
-    (0, False),
-    ('2017-01-01', True),
-    ('2000-13-01', False),
-    ('2000-02-30', False),
+@pytest.mark.parametrize('input,lookup,should_succeed', [
+    ('bla', 'exact', False),
+    ('1', 'exact', False),
+    (-1, 'exact', False),
+    (0, 'exact', False),
+    ('2017-01-01', 'exact', True),
+    ('2000-13-01', 'exact', False),
+    ('2000-02-30', 'exact', False),
 ])
-def test_date_field(input, should_succeed):
-    run_test(DateField, input, should_succeed)
+def test_date_field(input, lookup, should_succeed):
+    run_test(DateField, input, lookup, should_succeed)
 
 
-@pytest.mark.parametrize('input,should_succeed', [
-    ('bla', False),
-    ('1', False),
-    (-1, False),
-    (0, False),
-    ('-01:00', False),
-    ('00:00', True),
-    ('00:00:00', True),
-    ('12:00', True),
-    ('23:59', True),
-    ('23:60', False),
-    ('24:00', False),
+@pytest.mark.parametrize('input,lookup,should_succeed', [
+    ('bla', 'exact', False),
+    ('1', 'exact', False),
+    (-1, 'exact', False),
+    (0, 'exact', False),
+    ('-01:00', 'exact', False),
+    ('00:00', 'exact', True),
+    ('00:00:00', 'exact', True),
+    ('12:00', 'exact', True),
+    ('23:59', 'exact', True),
+    ('23:60', 'exact', False),
+    ('24:00', 'exact', False),
 ])
-def test_time_field(input, should_succeed):
-    run_test(TimeField, input, should_succeed)
+def test_time_field(input, lookup, should_succeed):
+    run_test(TimeField, input, lookup, should_succeed)
 
 
-@pytest.mark.parametrize('input,should_succeed', [
-    ('bla', False),
-    ('1', False),
-    (-1, False),
-    (0, False),
-    ('2017-01-01 01:00', False),
-    ('2017-01-01T-01:00', False),
-    ('2017-02-02T00:00', True),
-    ('2017-01-01T00:00:00', True),
-    ('2017-01-01T12:00', True),
-    ('2017-01-01T23:59', True),
-    ('2017-01-01T23:60', False),
-    ('2017-01-01T24:00', False),
-    ('2017-01-01T00:00Z', True),
-    ('2017-01-01T00:00:00Z', True),
-    ('2017-01-01T00:00:00+0000', True),
-    ('2017-01-01T00:00:00+0200', True),
+@pytest.mark.parametrize('input,lookup,should_succeed', [
+    ('bla', 'exact', False),
+    ('1', 'exact', False),
+    (-1, 'exact', False),
+    (0, 'exact', False),
+    ('2017-01-01 01:00', 'exact', False),
+    ('2017-01-01T-01:00', 'exact', False),
+    ('2017-02-02T00:00', 'exact', True),
+    ('2017-01-01T00:00:00', 'exact', True),
+    ('2017-01-01T12:00', 'exact', True),
+    ('2017-01-01T23:59', 'exact', True),
+    ('2017-01-01T23:60', 'exact', False),
+    ('2017-01-01T24:00', 'exact', False),
+    ('2017-01-01T00:00Z', 'exact', True),
+    ('2017-01-01T00:00:00Z', 'exact', True),
+    ('2017-01-01T00:00:00+0000', 'exact', True),
+    ('2017-01-01T00:00:00+0200', 'exact', True),
 ])
-def test_datetime_field(input, should_succeed):
-    run_test(DateTimeField, input, should_succeed)
+def test_datetime_field(input, lookup, should_succeed):
+    run_test(DateTimeField, input, lookup, should_succeed)
 
 
-@pytest.mark.parametrize('input,should_succeed', [
-    ('bla', False),
-    ('1', False),
-    (-1, True),
-    (0, True),
-    (2000, True),
+@pytest.mark.parametrize('input,lookup,should_succeed', [
+    ('bla', 'exact', False),
+    ('1', 'exact', False),
+    (-1, 'exact', True),
+    (0, 'exact', True),
+    (2000, 'exact', True),
 ])
-def test_year_field(input, should_succeed):
-    run_test(YearField, input, should_succeed)
+def test_year_field(input, lookup, should_succeed):
+    run_test(YearField, input, lookup, should_succeed)
 
 
-@pytest.mark.parametrize('input,should_succeed', [
-    ('bla', False),
-    ('1', False),
-    (-1, False),
-    (0, False),
-    (1, True),
-    (11, True),
-    (12, True),
-    (13, False),
+@pytest.mark.parametrize('input,lookup,should_succeed', [
+    ('bla', 'exact', False),
+    ('1', 'exact', False),
+    (-1, 'exact', False),
+    (0, 'exact', False),
+    (1, 'exact', True),
+    (11, 'exact', True),
+    (12, 'exact', True),
+    (13, 'exact', False),
 ])
-def test_month_field(input, should_succeed):
-    run_test(MonthField, input, should_succeed)
+def test_month_field(input, lookup, should_succeed):
+    run_test(MonthField, input, lookup, should_succeed)
 
 
-@pytest.mark.parametrize('input,should_succeed', [
-    ('bla', False),
-    ('1', False),
-    (-1, False),
-    (0, False),
-    (1, True),
-    (53, True),
-    (54, False),
+@pytest.mark.parametrize('input,lookup,should_succeed', [
+    ('bla', 'exact', False),
+    ('1', 'exact', False),
+    (-1, 'exact', False),
+    (0, 'exact', False),
+    (1, 'exact', True),
+    (53, 'exact', True),
+    (54, 'exact', False),
 ])
-def test_week_field(input, should_succeed):
-    run_test(WeekField, input, should_succeed)
+def test_week_field(input, lookup, should_succeed):
+    run_test(WeekField, input, lookup, should_succeed)
 
 
-@pytest.mark.parametrize('input,should_succeed', [
-    ('bla', False),
-    ('1', False),
-    (-1, False),
-    (0, False),
-    (1, True),
-    (31, True),
-    (32, False),
+@pytest.mark.parametrize('input,lookup,should_succeed', [
+    ('bla', 'exact', False),
+    ('1', 'exact', False),
+    (-1, 'exact', False),
+    (0, 'exact', False),
+    (1, 'exact', True),
+    (31, 'exact', True),
+    (32, 'exact', False),
 ])
-def test_day_field(input, should_succeed):
-    run_test(DayField, input, should_succeed)
+def test_day_field(input, lookup, should_succeed):
+    run_test(DayField, input, lookup, should_succeed)
 
 
-@pytest.mark.parametrize('input,should_succeed', [
-    ('bla', False),
-    ('1', False),
-    (-1, False),
-    (0, False),
-    (1, True),
-    (7, True),
-    (8, False),
+@pytest.mark.parametrize('input,lookup,should_succeed', [
+    ('bla', 'exact', False),
+    ('1', 'exact', False),
+    (-1, 'exact', False),
+    (0, 'exact', False),
+    (1, 'exact', True),
+    (7, 'exact', True),
+    (8, 'exact', False),
 ])
-def test_week_day_field(input, should_succeed):
-    run_test(WeekDayField, input, should_succeed)
+def test_week_day_field(input, lookup, should_succeed):
+    run_test(WeekDayField, input, lookup, should_succeed)
 
 
-@pytest.mark.parametrize('input,should_succeed', [
-    ('bla', False),
-    ('1', False),
-    (-1, False),
-    (0, True),
-    (10, True),
-    (23, True),
-    (24, False),
+@pytest.mark.parametrize('input,lookup,should_succeed', [
+    ('bla', 'exact', False),
+    ('1', 'exact', False),
+    (-1, 'exact', False),
+    (0, 'exact', True),
+    (10, 'exact', True),
+    (23, 'exact', True),
+    (24, 'exact', False),
 ])
-def test_hour_field(input, should_succeed):
-    run_test(HourField, input, should_succeed)
+def test_hour_field(input, lookup, should_succeed):
+    run_test(HourField, input, lookup, should_succeed)
 
 
-@pytest.mark.parametrize('input,should_succeed', [
-    ('bla', False),
-    ('1', False),
-    (-1, False),
-    (0, True),
-    (30, True),
-    (59, True),
-    (60, False),
+@pytest.mark.parametrize('input,lookup,should_succeed', [
+    ('bla', 'exact', False),
+    ('1', 'exact', False),
+    (-1, 'exact', False),
+    (0, 'exact', True),
+    (30, 'exact', True),
+    (59, 'exact', True),
+    (60, 'exact', False),
 ])
-def test_minute_field(input, should_succeed):
-    run_test(MinuteField, input, should_succeed)
+def test_minute_field(input, lookup, should_succeed):
+    run_test(MinuteField, input, lookup, should_succeed)
 
 
-@pytest.mark.parametrize('input,should_succeed', [
-    ('bla', False),
-    ('1', False),
-    (-1, False),
-    (0, True),
-    (30, True),
-    (59, True),
-    (60, False),
+@pytest.mark.parametrize('input,lookup,should_succeed', [
+    ('bla', 'exact', False),
+    ('1', 'exact', False),
+    (-1, 'exact', False),
+    (0, 'exact', True),
+    (30, 'exact', True),
+    (59, 'exact', True),
+    (60, 'exact', False),
 ])
-def test_second_field(input, should_succeed):
-    run_test(SecondField, input, should_succeed)
+def test_second_field(input, lookup, should_succeed):
+    run_test(SecondField, input, lookup, should_succeed)

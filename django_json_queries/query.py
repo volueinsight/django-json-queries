@@ -224,14 +224,17 @@ class Query(metaclass=QueryBase):
     """
 
     def __init__(self, query):
-        self.condition = self.resolve_condition(query)
+        try:
+            self.condition = self.resolve_condition(query)
+        except:
+            self.condition = None
 
     @property
     def is_valid(self):
         """
         Check if this query is valid.
         """
-        return self.condition.is_valid()
+        return self.condition is not None and self.condition.is_valid()
 
     def get_queryset(self):
         """

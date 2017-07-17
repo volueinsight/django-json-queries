@@ -1,20 +1,37 @@
 import inspect
 
+from distutils.version import StrictVersion
+
+import django
 from django.db import models
 from django.db.models import functions
 from django.db.models.constants import LOOKUP_SEP
 from django.db.models.expressions import Expression
-from django.db.models.lookups import Transform
+from django.db.models.lookups import Lookup, Transform
 
 from . import fields
 from . import conditions
 
 
+DJANGO_20 = StrictVersion(django.get_version()) >= StrictVersion('2.0')
+
+
 def _get_output_field(field, transform_name, query):
     expr = Expression(field)
-    # TODO: Third argument removed in Django 2.0
-    result = query.try_transform(expr, transform_name, None)
+    # Third argument removed in Django 2.0, so check and conditionaly add it
+    args = (expr, transform_name)
+    if not DJANGO_20:
+        args += (None, )
+    result = query.try_transform(*args)
     return result.output_field
+
+
+def _get_lookups(field, whitelist=None):
+    lookups = {}
+    for name, cls in field.get_lookups().items():
+        if issubclass(cls, Lookup) and (not whitelist or name in whitelist):
+            lookups[name] = cls
+    return lookups
 
 
 # Default mappings from model field to our query fields.
@@ -154,8 +171,9 @@ class QueryBase(type):
             field_class = type(field)
             if field_class in FIELD_FOR_DBFIELD_DEFAULTS:
                 f = FIELD_FOR_DBFIELD_DEFAULTS[field_class]
+                lookups = _get_lookups(field)
                 # TODO: Verbose name etc.
-                return f['field_class']()
+                return f['field_class'](lookups=lookups)
             else:
                 raise ValueError('Unsupported field: %s' % field)
 
@@ -183,28 +201,26 @@ class QueryBase(type):
                     transform_name, field
                 ))
 
-            # If it's not the last transform, we should resolve the output
-            # field, as the next transform will be on the output field of this
-            # transform.
-            if i + 1 < len(transforms):
-                field = _get_output_field(field, transform_name, query)
-                field_name = field_name + LOOKUP_SEP + transform_name
+            # Resolve the output field of the transform
+            field = _get_output_field(field, transform_name, query)
+            field_name = field_name + LOOKUP_SEP + transform_name
 
         # Return query field based on transform class
         if transform in FIELD_FOR_DBFUNCTION_DEFAULTS:
             f = FIELD_FOR_DBFUNCTION_DEFAULTS[transform]
+            lookups = _get_lookups(field)
             # TODO: Verbose name etc.
-            return f['field_class']()
+            return f['field_class'](lookups=lookups)
         else:
-            field = _get_output_field(field, transform_name, query)
             field_class = type(field)
             if field_class not in FIELD_FOR_DBFIELD_DEFAULTS:
                 raise ValueError('Unsupported transform %s on %s' % (
                     transform, field
                 ))
             f = FIELD_FOR_DBFIELD_DEFAULTS[field_class]
+            lookups = _get_lookups(field)
             # TODO: Verbose name etc.
-            return f['field_class']()
+            return f['field_class'](lookups=lookups)
 
 
 class Query(metaclass=QueryBase):

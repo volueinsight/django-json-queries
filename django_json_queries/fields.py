@@ -27,6 +27,10 @@ class Field(metaclass=FieldBase):
 
     def __init__(self, verbose_name=None, name=None, model_name=None,
                  lookups=None):
+        # Perform some basic validation
+        assert isinstance(lookups, dict), \
+            'Lookups must be a dict with name and lookup classes'
+
         self.verbose_name = verbose_name
         self.model_name = model_name
         self.name = name
@@ -66,8 +70,25 @@ class Field(metaclass=FieldBase):
 
         :param value: The value to validate
         """
-        if not isinstance(value, self.input_type):
-            raise ValueError('Please provide a valid value')
+        if not lookup in self.lookups:
+            raise ValueError('Unsupported lookup: %s' % lookup)
+
+        if hasattr(self, 'validate_%s' % lookup):
+            func = getattr(self, 'validate_%s' % lookup)
+            func(value, lookup)
+        else:
+            if not isinstance(value, self.input_type):
+                raise ValueError('Please provide a valid value')
+
+    def validate_in(self, value, lookup):
+        if not isinstance(value, list):
+            raise ValueError('Value must be a list')
+
+        for i, item in enumerate(value):
+            if not isinstance(item, self.input_type):
+                raise ValueError('Value at index %d must be of type %s' % (
+                    i, self.input_type
+                ))
 
     def prepare(self, value, lookup):
         """

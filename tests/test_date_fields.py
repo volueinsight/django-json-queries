@@ -1,5 +1,7 @@
 import pytest
 
+from django.db.models import lookups
+
 from django_json_queries.fields import (
     DateField, TimeField, DateTimeField,
     YearField, MonthField, DayField,
@@ -8,6 +10,12 @@ from django_json_queries.fields import (
 )
 
 from .test_fields import run_test
+
+
+LOOKUPS = {
+    'exact': lookups.Exact,
+    'in': lookups.In,
+}
 
 
 @pytest.mark.parametrize('input,lookup,should_succeed', [
@@ -23,7 +31,8 @@ from .test_fields import run_test
     ('P-1D', 'exact', True),
 ])
 def test_date_field(input, lookup, should_succeed):
-    run_test(DateField, input, lookup, should_succeed)
+    field = DateField(lookups=LOOKUPS)
+    run_test(field, input, lookup, should_succeed)
 
 
 @pytest.mark.parametrize('input,lookup,should_succeed', [
@@ -40,7 +49,8 @@ def test_date_field(input, lookup, should_succeed):
     ('24:00', 'exact', False),
 ])
 def test_time_field(input, lookup, should_succeed):
-    run_test(TimeField, input, lookup, should_succeed)
+    field = TimeField(lookups=LOOKUPS)
+    run_test(field, input, lookup, should_succeed)
 
 
 @pytest.mark.parametrize('input,lookup,should_succeed', [
@@ -65,7 +75,8 @@ def test_time_field(input, lookup, should_succeed):
     ('P-1D', 'exact', True),
 ])
 def test_datetime_field(input, lookup, should_succeed):
-    run_test(DateTimeField, input, lookup, should_succeed)
+    field = DateTimeField(lookups=LOOKUPS)
+    run_test(field, input, lookup, should_succeed)
 
 
 @pytest.mark.parametrize('input,lookup,should_succeed', [
@@ -76,7 +87,8 @@ def test_datetime_field(input, lookup, should_succeed):
     (2000, 'exact', True),
 ])
 def test_year_field(input, lookup, should_succeed):
-    run_test(YearField, input, lookup, should_succeed)
+    field = YearField(lookups=LOOKUPS)
+    run_test(field, input, lookup, should_succeed)
 
 
 @pytest.mark.parametrize('input,lookup,should_succeed', [
@@ -90,7 +102,8 @@ def test_year_field(input, lookup, should_succeed):
     (13, 'exact', False),
 ])
 def test_month_field(input, lookup, should_succeed):
-    run_test(MonthField, input, lookup, should_succeed)
+    field = MonthField(lookups=LOOKUPS)
+    run_test(field, input, lookup, should_succeed)
 
 
 @pytest.mark.parametrize('input,lookup,should_succeed', [
@@ -103,7 +116,8 @@ def test_month_field(input, lookup, should_succeed):
     (54, 'exact', False),
 ])
 def test_week_field(input, lookup, should_succeed):
-    run_test(WeekField, input, lookup, should_succeed)
+    field = WeekField(lookups=LOOKUPS)
+    run_test(field, input, lookup, should_succeed)
 
 
 @pytest.mark.parametrize('input,lookup,should_succeed', [
@@ -116,7 +130,8 @@ def test_week_field(input, lookup, should_succeed):
     (32, 'exact', False),
 ])
 def test_day_field(input, lookup, should_succeed):
-    run_test(DayField, input, lookup, should_succeed)
+    field = DayField(lookups=LOOKUPS)
+    run_test(field, input, lookup, should_succeed)
 
 
 @pytest.mark.parametrize('input,lookup,should_succeed', [
@@ -129,7 +144,8 @@ def test_day_field(input, lookup, should_succeed):
     (8, 'exact', False),
 ])
 def test_week_day_field(input, lookup, should_succeed):
-    run_test(WeekDayField, input, lookup, should_succeed)
+    field = WeekDayField(lookups=LOOKUPS)
+    run_test(field, input, lookup, should_succeed)
 
 
 @pytest.mark.parametrize('input,lookup,should_succeed', [
@@ -142,7 +158,8 @@ def test_week_day_field(input, lookup, should_succeed):
     (24, 'exact', False),
 ])
 def test_hour_field(input, lookup, should_succeed):
-    run_test(HourField, input, lookup, should_succeed)
+    field = HourField(lookups=LOOKUPS)
+    run_test(field, input, lookup, should_succeed)
 
 
 @pytest.mark.parametrize('input,lookup,should_succeed', [
@@ -155,7 +172,8 @@ def test_hour_field(input, lookup, should_succeed):
     (60, 'exact', False),
 ])
 def test_minute_field(input, lookup, should_succeed):
-    run_test(MinuteField, input, lookup, should_succeed)
+    field = MinuteField(lookups=LOOKUPS)
+    run_test(field, input, lookup, should_succeed)
 
 
 @pytest.mark.parametrize('input,lookup,should_succeed', [
@@ -168,4 +186,5 @@ def test_minute_field(input, lookup, should_succeed):
     (60, 'exact', False),
 ])
 def test_second_field(input, lookup, should_succeed):
-    run_test(SecondField, input, lookup, should_succeed)
+    field = SecondField(lookups=LOOKUPS)
+    run_test(field, input, lookup, should_succeed)

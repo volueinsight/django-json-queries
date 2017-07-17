@@ -1,12 +1,13 @@
 import pytest
 
+from django.db.models import lookups
+
 from django_json_queries.fields import (
     IntegerField, FloatField, StringField, BooleanField
 )
 
 
-def run_test(Field, input, lookup, should_succeed):
-    field = Field()
+def run_test(field, input, lookup, should_succeed):
     try:
         field.validate(input, lookup)
         if not should_succeed:
@@ -14,6 +15,12 @@ def run_test(Field, input, lookup, should_succeed):
     except Exception as e:
         if should_succeed:
             raise e
+
+
+LOOKUPS = {
+    'exact': lookups.Exact,
+    'in': lookups.In,
+}
 
 
 @pytest.mark.parametrize('input,lookup,should_succeed', [
@@ -25,9 +32,13 @@ def run_test(Field, input, lookup, should_succeed):
     (1321321, 'exact', True),
     (0.12312, 'exact', False),
     (412.321, 'exact', False),
+    ([1,2], 'in', True),
+    ([1], 'in', True),
+    ([1, 1.5], 'in', False),
 ])
 def test_integer_field(input, lookup, should_succeed):
-    run_test(IntegerField, input, lookup, should_succeed)
+    field = IntegerField(lookups=LOOKUPS)
+    run_test(field, input, lookup, should_succeed)
 
 
 @pytest.mark.parametrize('input,lookup,should_succeed', [
@@ -39,9 +50,13 @@ def test_integer_field(input, lookup, should_succeed):
     (1321321, 'exact', True),
     (0.12312, 'exact', True),
     (412.321, 'exact', True),
+    ([1,2], 'in', True),
+    ([1, 1.5], 'in', True),
+    ([1.0, 1.5], 'in', True),
 ])
 def test_float_field(input, lookup, should_succeed):
-    run_test(FloatField, input, lookup, should_succeed)
+    field = FloatField(lookups=LOOKUPS)
+    run_test(field, input, lookup, should_succeed)
 
 
 @pytest.mark.parametrize('input,lookup,should_succeed', [
@@ -52,9 +67,12 @@ def test_float_field(input, lookup, should_succeed):
     (-1, 'exact', False),
     (0, 'exact', False),
     (0.12312, 'exact', False),
+    ([1, 1.5], 'in', False),
+    (['a', 'b'], 'in', True),
 ])
 def test_string_field(input, lookup, should_succeed):
-    run_test(StringField, input, lookup, should_succeed)
+    field = StringField(lookups=LOOKUPS)
+    run_test(field, input, lookup, should_succeed)
 
 
 @pytest.mark.parametrize('input,lookup,should_succeed', [
@@ -67,6 +85,11 @@ def test_string_field(input, lookup, should_succeed):
     (0.12312, 'exact', False),
     (True, 'exact', True),
     (False, 'exact', True),
+    ([True, False], 'in', True),
+    ([False], 'in', True),
+    ([True], 'in', True),
+    ([''], 'in', False),
 ])
 def test_boolean_field(input, lookup, should_succeed):
-    run_test(BooleanField, input, lookup, should_succeed)
+    field = BooleanField(lookups=LOOKUPS)
+    run_test(field, input, lookup, should_succeed)

@@ -1,3 +1,11 @@
+"""
+This file contains utility methods used to parse and validate input data.
+
+Most of these validations are based on regexes at the moment, but to add
+flexibility and improve the accuracy of the validation, the plan is to replace
+the more complex validations with actual parsers over time.
+"""
+
 import re
 
 ISO8601_DURATION_RE = re.compile(
@@ -79,14 +87,33 @@ def is_duration(value):
 
 
 def is_date(value):
+    """
+    Check if the given value is a valid ISO 8601 formatted date string.
+
+    :param value: The value to check
+    :returns: True if the value is a valid date string
+    """
     return ISO8601_DATE_RE.fullmatch(str(value)) is not None
 
 
 def is_time(value):
+    """
+    Check if the given value is a valid ISO 8601 formatted time string.
+
+    :param value: The value to check
+    :returns: True if the value is a valid time string
+    """
     return ISO8601_TIME_RE.fullmatch(str(value)) is not None
 
 
 def is_datetime(value):
+    """
+    Check if the given value is a valid ISO 8601 formatted datetime string. This
+    will also accept just dates without time and time zone.
+
+    :param value: The value to check
+    :returns: True if the value is a valid datetime string
+    """
     # We should accept dates as datetimes, so if a 'T' is not present in the
     # input, parse the value as just a date
     value = str(value)

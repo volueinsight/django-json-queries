@@ -13,20 +13,58 @@ ISO8601_DURATION_RE = re.compile(
     ')?' # End of time
 )
 
-ISO8601_TIMESTAMP_RE = re.compile(
-    '(?P<year>[+-]?\d{4,})' # Year, must be at least 4 numbers
-    # Wither a week date
-    '(?P<week>-?W\d{2})'
-    '|' # Or a "normal" date
+ISO8601_DATE_RE = re.compile(
+    '^'
+    '(?P<year>[+-]?\d{4})'
     '('
-    '(?P<months>-?\d+M)?'
-    '(?P<weeks>-?\d+W)?' # Weeks (not within standard, but accepted by PG)
-    '(?P<days>-?\d+D)?'
-    '(T' # Start of time
-    '(?P<hours>-?\d+H)?' # Hours
-    '(?P<minutes>-?\d+M)?' # Minutes
-    '(?P<seconds>-?\d+S)?' # Seconds
-    ')?' # End of switch between week date and normal date
+    '('
+    '(-(?P<month>\d{2}))'
+    '(-(?P<day>\d{2}))?'
+    ')'
+    '|'
+    '('
+    '(-?W(?P<week>\d{2}))'
+    '(-?(?P<weekday>\d))?'
+    ')'
+    ')?'
+    '$'
+)
+
+ISO8601_TIME_RE = re.compile(
+    '^'
+    '(?P<hour>\d{2})'
+    '(:(?P<minute>\d{2}))?'
+    '(:(?P<second>\d{2}(.\d+)?))?'
+    '$'
+)
+
+ISO8601_DATETIME_RE = re.compile(
+    # Year, must be at least 4 numbers and is required for all dates, optionally
+    # prefixed with a plus or minus sign.
+    '^(?P<year>[+-]?\d{4,})'
+
+    # Date
+    '('
+    '('
+    '-(?P<month>\d{2})'
+    '-(?P<day>\d{2})'
+    ')'
+    '|'
+    '('
+    '-?W(?P<week>\d{2})'
+    '-?(?P<weekday>\d)'
+    ')'
+    ')'
+
+    # Time
+    'T'
+    '(?P<hour>\d{2})'
+    '(:(?P<minute>\d{2}))?'
+    '(:(?P<second>\d{2}(.\d+)?))?'
+
+    # Time zone info
+    '(Z)?'
+    '$'
 )
 
 
@@ -37,4 +75,22 @@ def is_duration(value):
     :param value: The value to check
     :returns: True if the value matches
     """
-    return ISO8601_DURATION_RE.fullmatch(value) is not None
+    return ISO8601_DURATION_RE.fullmatch(str(value)) is not None
+
+
+def is_date(value):
+    return ISO8601_DATE_RE.fullmatch(str(value)) is not None
+
+
+def is_time(value):
+    return ISO8601_TIME_RE.fullmatch(str(value)) is not None
+
+
+def is_datetime(value):
+    # We should accept dates as datetimes, so if a 'T' is not present in the
+    # input, parse the value as just a date
+    value = str(value)
+    if 'T' not in value:
+        return ISO8601_DATE_RE.fullmatch(value) is not None
+    else:
+        return ISO8601_DATETIME_RE.fullmatch(value) is not None

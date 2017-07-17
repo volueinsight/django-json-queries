@@ -5,7 +5,7 @@ from datetime import date, time, datetime
 from django.db.models.functions import Now
 from django.utils.dateparse import parse_date, parse_time, parse_datetime
 
-from .utils import is_duration
+from .utils import is_duration, is_datetime, is_date, is_time
 
 
 __all__ = [
@@ -257,17 +257,10 @@ class DateField(Field):
         super().validate(value, lookup)
 
         # Check if a duration was provided
-        if is_duration(value):
+        if is_duration(value) or is_date(value):
             return
 
-        # Try to parse as a date
-        try:
-            value = parse_date(value)
-        except ValueError:
-            value = None
-
-        if value is None:
-            raise ValueError('Please provide a valid date')
+        raise ValueError('Please provide a valid date or duration')
 
     def prepare(self, value, lookup):
         """
@@ -292,12 +285,7 @@ class TimeField(Field):
         super().validate(value, lookup)
 
         # Try to parse as a time
-        try:
-            value = parse_time(value)
-        except ValueError:
-            value = None
-
-        if value is None:
+        if not parse_time(value):
             raise ValueError('Please provide a valid time')
 
 
@@ -310,17 +298,10 @@ class DateTimeField(Field):
         super().validate(value, lookup)
 
         # Check if a duration was provided
-        if is_duration(value):
+        if is_duration(value) or is_datetime(value):
             return
 
-        # Try to parse as a datetime
-        try:
-            value = parse_datetime(value)
-        except ValueError:
-            value = None
-
-        if value is None:
-            raise ValueError('Please provide a valid datetime')
+        raise ValueError('Please provide a valid datetime')
 
     def prepare(self, value, lookup):
         """

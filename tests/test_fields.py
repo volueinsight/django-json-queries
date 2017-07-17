@@ -7,12 +7,13 @@ from django_json_queries.fields import (
 )
 
 
-def run_test(field, input, lookup, should_succeed):
+def run_test(field, value, lookup, should_succeed):
     try:
-        field.validate(input, lookup)
+        field.validate(value, lookup)
         if not should_succeed:
-            assert False, 'Value should not be valid'
-    except Exception as e:
+            assert False, \
+                '"%s" should not be valid for field "%s"' % (value, field)
+    except ValueError as e:
         if isinstance(e, AssertionError) or should_succeed:
             raise e
 

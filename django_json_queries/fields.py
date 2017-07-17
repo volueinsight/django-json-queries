@@ -1,3 +1,5 @@
+from collections import Iterable
+
 from datetime import date, time, datetime
 
 from django.db.models.functions import Now
@@ -17,6 +19,10 @@ __all__ = [
 class FieldBase(type):
     def __new__(cls, name, bases, attrs):
         super_new = super().__new__
+
+        # Make sure input_type is iterable
+        if 'input_type' in attrs and not isinstance(attrs['input_type'], Iterable):
+            attrs['input_type'] = (attrs['input_type'], )
 
         # TODO: Perform some kind of validation probably
         return super_new(cls, name, bases, attrs)
@@ -77,18 +83,21 @@ class Field(metaclass=FieldBase):
             func = getattr(self, 'validate_%s' % lookup)
             func(value, lookup)
         else:
-            if not isinstance(value, self.input_type):
-                raise ValueError('Please provide a valid value')
+            self._check_type(value)
 
     def validate_in(self, value, lookup):
         if not isinstance(value, list):
             raise ValueError('Value must be a list')
 
         for i, item in enumerate(value):
-            if not isinstance(item, self.input_type):
-                raise ValueError('Value at index %d must be of type %s' % (
-                    i, self.input_type
-                ))
+            self._check_type(item)
+
+    def _check_type(self, value):
+        if not isinstance(value, self.input_type):
+            raise ValueError('Please provide a valid value')
+        if int in self.input_type:
+            if isinstance(value, bool):
+                raise ValueError('Please provide a valid value')
 
     def prepare(self, value, lookup):
         """

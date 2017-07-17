@@ -2,16 +2,33 @@ import re
 
 ISO8601_DURATION_RE = re.compile(
     'P' # First char identifying that this is a duration
-    '(-?\d+Y)?' # Year
-    '(-?\d+M)?' # Month
-    '(-?\d+W)?' # Week (not within standard, but accepted by PG)
-    '(-?\d+D)?' # Month
+    '(?P<years>-?\d+Y)?'
+    '(?P<months>-?\d+M)?'
+    '(?P<weeks>-?\d+W)?' # Weeks (not within standard, but accepted by PG)
+    '(?P<days>-?\d+D)?'
     '(T' # Start of time
-    '(-?\d+H)?' # Year
-    '(-?\d+M)?' # Month
-    '(-?\d+S)?' # Month
+    '(?P<hours>-?\d+H)?' # Hours
+    '(?P<minutes>-?\d+M)?' # Minutes
+    '(?P<seconds>-?\d+S)?' # Seconds
     ')?' # End of time
 )
+
+ISO8601_TIMESTAMP_RE = re.compile(
+    '(?P<year>[+-]?\d{4,})' # Year, must be at least 4 numbers
+    # Wither a week date
+    '(?P<week>-?W\d{2})'
+    '|' # Or a "normal" date
+    '('
+    '(?P<months>-?\d+M)?'
+    '(?P<weeks>-?\d+W)?' # Weeks (not within standard, but accepted by PG)
+    '(?P<days>-?\d+D)?'
+    '(T' # Start of time
+    '(?P<hours>-?\d+H)?' # Hours
+    '(?P<minutes>-?\d+M)?' # Minutes
+    '(?P<seconds>-?\d+S)?' # Seconds
+    ')?' # End of switch between week date and normal date
+)
+
 
 def is_duration(value):
     """

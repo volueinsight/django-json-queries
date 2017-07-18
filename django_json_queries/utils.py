@@ -39,8 +39,12 @@ ISO8601_DATE_RE = re.compile(
     ')'
     '|'
     '('
-    '(-?W(?P<week>\d{2}))'
+    '-?W(?P<week>\d{2})'
     '(-?(?P<weekday>\d))?'
+    ')'
+    '|'
+    '('
+    '-?(?P<ordinal>\d{3})'
     ')'
     ')?'
     '$'
@@ -68,6 +72,10 @@ ISO8601_DATETIME_RE = re.compile(
     '('
     '-?W(?P<week>\d{2})'
     '-?(?P<weekday>\d)'
+    ')'
+    '|'
+    '('
+    '-?(?P<ordinal>\d{3})'
     ')'
     ')'
 
@@ -231,11 +239,14 @@ def _get_date(match):
     day = match.get('day', None)
     week = match.get('week', None)
     weekday = match.get('weekday', None)
+    ordinal = match.get('ordinal', None)
 
     if month:
         return _get_calendar_date(year, month, day)
     elif week:
         return _get_week_date(year, week, weekday)
+    elif ordinal:
+        return _get_ordinal_date(year, ordinal)
     else:
         return datetime.date(year, 1, 1)
 
@@ -289,6 +300,25 @@ def _get_week_date(year, week, weekday):
     date = datetime.date(year, 1, 4)
     date -= datetime.timedelta(days=date.weekday())
     return date + datetime.timedelta(weeks=week - 1, days=weekday - 1)
+
+
+def _get_ordinal_date(year, day):
+    day = int(day)
+    days_in_year = 366 if calendar.isleap(year) else 365
+
+    if day > days_in_year or day < 1:
+        raise ValidationError(
+            '%(value)d is not a valid ordinal day for year %(year)d, '
+            'please specify a day between 1 and %(days_in_year)d',
+            params={
+                'value': day,
+                'year': year,
+                'days_in_year': days_in_year,
+            },
+            code='invalid',
+        )
+
+    return datetime.date(year, 1, 1) + datetime.timedelta(days=day-1)
 
 
 def _get_time(match):

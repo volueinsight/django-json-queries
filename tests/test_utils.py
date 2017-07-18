@@ -34,6 +34,12 @@ def test_is_time(value, is_valid):
     ('2017W121', True),
     ('201W121', False),    # Year must be as least 4 numbers
     ('201W12', False),     # Year must be as least 4 numbers
+    ('2000-366', True),
+    ('2001-366', False),   # 2001 is not a leap year
+    ('2001-365', True),
+    ('2001000', False),    # Days start at 1
+    ('2001001', True),
+    ('2001365', True),
     (1, False),            # Should this be valid (year 1)?
 ])
 def test_is_date(value, is_valid):
@@ -58,9 +64,9 @@ def test_is_date(value, is_valid):
     ('2017W12', True),
     ('2017W121', True),
     ('201W121', False),     # Year must be as least 4 numbers
-    ('201W12', False),           # Year must be as least 4 numbers
-    (1, False),                  # Should this be valid (year 1)?
-    ('2017-01-01 00:00', False), # Should have a T as separator
+    ('201W12', False),      # Year must be as least 4 numbers
+    (1, False),                   # Should this be valid (year 1)?
+    ('2017-01-01 00:00', False),  # Should have a T as separator
     ('2017-01-01T00:00', True),
 ])
 def test_is_datetime(value, is_valid):

@@ -77,10 +77,14 @@ ISO8601_DATETIME_RE = re.compile(
     '(:(?P<second>\d{2}(\.\d{1,6})?))?'
 
     # Time zone info
-    '(?P<zone>'
-    'Z'
+    '('
+    '(?P<zone_utc>Z)'
     '|'
-    '([+-]\d{2}:?\d{2})'
+    '('
+    '(?P<zone_dir>[+-−])'
+    '(?P<zone_hours>\d{2})'
+    '(:?(?P<zone_minutes>\d{2}))?'
+    ')'
     ')?'
     '$'
 )
@@ -173,6 +177,12 @@ def is_datetime(value):
         log.exception('Invalid time')
         return False
 
+    try:
+        _get_zone(match.groupdict())
+    except:
+        log.exception('Invalid time zone')
+        return False
+
     return True
 
 
@@ -239,3 +249,28 @@ def _get_time(match):
         fraction = 0
 
     return datetime.time(hour, minute, int(second), fraction)
+
+
+def _get_zone(match):
+    if match.get('zone_utc', None):
+        return datetime.timezone.utc
+
+    dir = match.get('zone_dir', None)
+    hours = match.get('zone_hours', None)
+    minutes = match.get('zone_minutes', None)
+
+    if not dir or not hours:
+        return None
+
+    hours = int(hours)
+    minutes = int(minutes) if minutes else 0
+
+    if hours not in range(0, 23):
+        raise ValueError('%d hours is not a valid time zone offset' % hours)
+    if minutes not in range(0, 59):
+        raise ValueError('%d minutes is not a valid time zone offset' % minutes)
+
+    if dir == '+':
+        return datetime.timezone(datetime.timedelta(hours=hours, minutes=minutes))
+    else:
+        return datetime.timezone(datetime.timedelta(hours=-hours, minutes=-minutes))

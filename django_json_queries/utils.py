@@ -48,7 +48,7 @@ ISO8601_TIME_RE = re.compile(
     '^'
     '(?P<hour>\d{2})'
     '(:(?P<minute>\d{2}))?'
-    '(:(?P<second>\d{2}(.\d+)?))?'
+    '(:(?P<second>\d{2}(\.\d{1,6})?))?'
     '$'
 )
 
@@ -228,9 +228,9 @@ def _get_date(match):
     elif week:
         week = int(week)
         weekday = int(weekday) if weekday else 1
-        if week not in range(1, _weeks_in_year(year)):
+        if week not in range(1, _weeks_in_year(year)+1):
             raise ValueError('%d is not a valid week in year %d' % (week, year))
-        if weekday not in range(1, 7):
+        if weekday not in range(1, 8):
             raise ValueError('%d is not a valid weekday' % weekday)
         return _week_date(year, week, weekday)
     else:
@@ -243,15 +243,28 @@ def _get_time(match):
     second = _get_from_match('second', match)
 
     if '.' in second:
-        second, fraction = second.split(',', 2)
-        fraction = int(fraction.lpad(6, '0'))
+        second, fraction = second.split('.', 2)
+        fraction = int(fraction.ljust(6, '0'))
     else:
         fraction = 0
+    second = int(second)
 
-    return datetime.time(hour, minute, int(second), fraction)
+    if hour not in range(0, 24):
+        raise ValueError('%d is not a valid hour' % hour)
+    if minute not in range(0, 60):
+        raise ValueError('%d is not a valid minute' % minute)
+    if second not in range(0, 60):
+        raise ValueError('%d is not a valid second' % second)
+
+    return datetime.time(hour, minute, second, fraction)
 
 
 def _get_zone(match):
+    """
+    Helper function to get a timezone object from the specified match, if
+    specified. If no time zone info is specified, None is returned. If invalid
+    time zone info is specified, an exception will be raised.
+    """
     if match.get('zone_utc', None):
         return datetime.timezone.utc
 
@@ -265,9 +278,9 @@ def _get_zone(match):
     hours = int(hours)
     minutes = int(minutes) if minutes else 0
 
-    if hours not in range(0, 23):
+    if hours not in range(0, 24):
         raise ValueError('%d hours is not a valid time zone offset' % hours)
-    if minutes not in range(0, 59):
+    if minutes not in range(0, 60):
         raise ValueError('%d minutes is not a valid time zone offset' % minutes)
 
     if dir == '+':

@@ -21,8 +21,9 @@ class FieldBase(type):
         super_new = super().__new__
 
         # Make sure input_type is iterable
-        if 'input_type' in attrs and not isinstance(attrs['input_type'], Iterable):
-            attrs['input_type'] = (attrs['input_type'], )
+        if 'input_type' in attrs:
+            if not isinstance(attrs['input_type'], Iterable):
+                attrs['input_type'] = (attrs['input_type'], )
 
         # TODO: Perform some kind of validation probably
         return super_new(cls, name, bases, attrs)
@@ -285,7 +286,7 @@ class TimeField(Field):
         super().validate(value, lookup)
 
         # Try to parse as a time
-        if not parse_time(value):
+        if not is_time(value):
             raise ValueError('Please provide a valid time')
 
 

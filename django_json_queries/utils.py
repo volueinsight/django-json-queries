@@ -11,6 +11,8 @@ import calendar
 import datetime
 import logging
 
+from django.core.exceptions import ValidationError
+
 log = logging.getLogger(__name__)
 
 
@@ -29,7 +31,7 @@ ISO8601_DURATION_RE = re.compile(
 
 ISO8601_DATE_RE = re.compile(
     '^'
-    '(?P<year>[+-]?\d{4})'
+    '(?P<year>\d{4})'
     '('
     '('
     '(-(?P<month>\d{2}))'
@@ -53,9 +55,8 @@ ISO8601_TIME_RE = re.compile(
 )
 
 ISO8601_DATETIME_RE = re.compile(
-    # Year, must be at least 4 numbers and is required for all dates, optionally
-    # prefixed with a plus or minus sign.
-    '^(?P<year>[+-]?\d{4,})'
+    '^'
+    '(?P<year>\d{4})'
 
     # Date
     '('
@@ -71,14 +72,14 @@ ISO8601_DATETIME_RE = re.compile(
     ')'
 
     # Time
-    'T'
+    '[Tt]'
     '(?P<hour>\d{2})'
     '(:(?P<minute>\d{2}))?'
     '(:(?P<second>\d{2}(\.\d{1,6})?))?'
 
     # Time zone info
     '('
-    '(?P<zone_utc>Z)'
+    '(?P<zone_utc>[Zz])'
     '|'
     '('
     '(?P<zone_dir>[+-−])'
@@ -107,18 +108,26 @@ def is_date(value):
     :param value: The value to check
     :returns: True if the value is a valid date string
     """
-    match = ISO8601_DATE_RE.fullmatch(str(value))
-
-    if not match:
-        return False
-
     try:
-        _get_date(match.groupdict())
-    except:
+        parse_date(value)
+        return True
+    except ValidationError:
         log.exception('Invalid date')
         return False
 
-    return True
+
+def parse_date(value):
+    match = ISO8601_DATE_RE.fullmatch(str(value))
+
+    if not match:
+        raise ValidationError(
+            '"%(value)s" is not a valid ISO8601 date.',
+            params={'value': value},
+            code='invalid',
+        )
+
+    return _get_date(match.groupdict())
+
 
 
 def is_time(value):
@@ -128,18 +137,24 @@ def is_time(value):
     :param value: The value to check
     :returns: True if the value is a valid time string
     """
-    match = ISO8601_TIME_RE.fullmatch(str(value))
-
-    if not match:
-        return False
-
     try:
-        _get_time(match.groupdict())
-    except:
+        parse_time(value)
+        return True
+    except ValidationError:
         log.exception('Invalid time')
         return False
 
-    return True
+def parse_time(value):
+    match = ISO8601_TIME_RE.fullmatch(str(value))
+
+    if not match:
+        raise ValidationError(
+            '"%(value)s" is not a valid ISO8601 time.',
+            params={'value': value},
+            code='invalid',
+        )
+
+    return _get_time(match.groupdict())
 
 
 def is_datetime(value):
@@ -150,9 +165,27 @@ def is_datetime(value):
     :param value: The value to check
     :returns: True if the value is a valid datetime string
     """
+    try:
+        parse_datetime(value)
+        return True
+    except ValidationError:
+        log.exception('Invalid date or datetime')
+        return False
+
+def parse_datetime(value):
+    """
+    Parse the value into a python datetime object. The specified value must be
+    a valid ISO8601 date or datetime formatted string.
+
+    A ValidationError is raised if the given value does not match the expected
+    format or is an invalid date.
+
+    :param value: The value to parse into a datetime
+    :returns: A datetime object
+    """
+
     # We should accept dates as datetimes, so if a 'T' is not present in the
     # input, parse the value as just a date
-
     value = str(value)
     if 'T' not in value:
         match = ISO8601_DATE_RE.fullmatch(value)
@@ -162,28 +195,19 @@ def is_datetime(value):
     # If the string did not match, return false. If it did match, we have to
     # verify the components
     if not match:
-        return False
+        raise ValidationError(
+            '"%(value)s" is not a valid ISO8601 date or datetime.',
+            params={'value': value},
+            code='invalid',
+        )
 
-    # Get date from match
-    try:
-        _get_date(match.groupdict())
-    except:
-        log.exception('Invalid date')
-        return False
+    # Get components from the regex match
+    date = _get_date(match.groupdict())
+    time = _get_time(match.groupdict())
+    zone = _get_zone(match.groupdict())
 
-    try:
-        _get_time(match.groupdict())
-    except:
-        log.exception('Invalid time')
-        return False
-
-    try:
-        _get_zone(match.groupdict())
-    except:
-        log.exception('Invalid time zone')
-        return False
-
-    return True
+    # Return datetime object
+    return datetime.datetime.combine(date, time).replace(tzinfo=zone)
 
 
 def _weeks_in_year(year):
@@ -191,14 +215,6 @@ def _weeks_in_year(year):
     # day's weeknumber is the same as the number of weeks in the year
     _, week, _ = datetime.date(year, 12, 28).isocalendar()
     return week
-
-
-def _week_date(year, week, weekday):
-    # The 4th of January is always in the first week of the year, so we can use
-    # that as the basis for the calculation.
-    date = datetime.date(year, 1, 4)
-    date -= datetime.timedelta(days=date.weekday())
-    return date + datetime.timedelta(weeks=week - 1, days=weekday - 1)
 
 
 def _get_from_match(attr, match, default='0'):
@@ -217,24 +233,62 @@ def _get_date(match):
     weekday = match.get('weekday', None)
 
     if month:
-        month = int(month)
-        day = int(day) if day else 1
-        if month not in range(1, 13):
-            raise ValueError('%d is not a valid month' % month)
-        _, days_in_month = calendar.monthrange(year, month)
-        if day > days_in_month:
-            raise ValueError('%d is not a valid day in %d-%d' % (year, month))
-        return datetime.date(year, month, day)
+        return _get_calendar_date(year, month, day)
     elif week:
-        week = int(week)
-        weekday = int(weekday) if weekday else 1
-        if week not in range(1, _weeks_in_year(year)+1):
-            raise ValueError('%d is not a valid week in year %d' % (week, year))
-        if weekday not in range(1, 8):
-            raise ValueError('%d is not a valid weekday' % weekday)
-        return _week_date(year, week, weekday)
+        return _get_week_date(year, week, weekday)
     else:
         return datetime.date(year, 1, 1)
+
+
+def _get_calendar_date(year, month, day):
+    month = int(month)
+    day = int(day) if day else 1
+    if month not in range(1, 13):
+        raise ValidationError(
+            '%(value)d is not a valid month, '
+            'please specify a month between 1 and 12.',
+            params={'value': month},
+            code='invalid',
+        )
+    _, days_in_month = calendar.monthrange(year, month)
+    if day > days_in_month:
+        raise ValidationError(
+            '%(value)d is not a valid day in %(month_name)s %(year)d, '
+            'please specify a day between 1 and %(days_in_month)d.',
+            params={
+                'value': day,
+                'month_name': calendar.month_name[month],
+                'year': year,
+                'days_in_month': days_in_month,
+            },
+            code='invalid',
+        )
+    return datetime.date(year, month, day)
+
+
+def _get_week_date(year, week, weekday):
+    week = int(week)
+    weekday = int(weekday) if weekday else 1
+    weeks_in_year = _weeks_in_year(year)
+    if week not in range(1, weeks_in_year+1):
+        raise ValidationError(
+            '%(value)d is not a valid week in year %(year)d.',
+            params={'value': week, 'year': year},
+            code='invalid',
+        )
+    if weekday not in range(1, 8):
+        raise ValidationError(
+            '%(value)d is not a valid weekday, '
+            'please specify a day between 1 and 7.',
+            params={'value': weekday},
+            code='invalid',
+        )
+
+    # The 4th of January is always in the first week of the year, so we can use
+    # that as the basis for the calculation.
+    date = datetime.date(year, 1, 4)
+    date -= datetime.timedelta(days=date.weekday())
+    return date + datetime.timedelta(weeks=week - 1, days=weekday - 1)
 
 
 def _get_time(match):
@@ -242,6 +296,7 @@ def _get_time(match):
     minute = int(_get_from_match('minute', match))
     second = _get_from_match('second', match)
 
+    # Check for and handle a seconds fraction
     if '.' in second:
         second, fraction = second.split('.', 2)
         fraction = int(fraction.ljust(6, '0'))
@@ -249,12 +304,28 @@ def _get_time(match):
         fraction = 0
     second = int(second)
 
+    # Validate that all components are within their valid ranges
     if hour not in range(0, 24):
-        raise ValueError('%d is not a valid hour' % hour)
+        raise ValidationError(
+            '%(value)d is not a valid hour, '
+            'please enter an hour between 0 and 23',
+            params={'value': hour},
+            code='invalid',
+        )
     if minute not in range(0, 60):
-        raise ValueError('%d is not a valid minute' % minute)
+        raise ValidationError(
+            '%(value)d is not a valid minute, '
+            'please enter a minute between 0 and 59',
+            params={'value': minute},
+            code='invalid',
+        )
     if second not in range(0, 60):
-        raise ValueError('%d is not a valid second' % second)
+        raise ValidationError(
+            '%(value)d is not a valid second, '
+            'please enter a second between 0 and 59',
+            params={'value': second},
+            code='invalid',
+        )
 
     return datetime.time(hour, minute, second, fraction)
 
@@ -279,9 +350,17 @@ def _get_zone(match):
     minutes = int(minutes) if minutes else 0
 
     if hours not in range(0, 24):
-        raise ValueError('%d hours is not a valid time zone offset' % hours)
+        raise ValidationError(
+            '%(value)d hours is not a valid time zone offset',
+            params={'value': hours},
+            code='invalid',
+        )
     if minutes not in range(0, 60):
-        raise ValueError('%d minutes is not a valid time zone offset' % minutes)
+        raise ValidationError(
+            '%(value)d minutes is not a valid time zone offset',
+            params={'value': minutes},
+            code='invalid',
+        )
 
     if dir == '+':
         return datetime.timezone(datetime.timedelta(hours=hours, minutes=minutes))

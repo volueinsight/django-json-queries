@@ -7,6 +7,9 @@ the more complex validations with actual parsers over time.
 """
 
 import re
+import calendar
+import datetime
+
 
 ISO8601_DURATION_RE = re.compile(
     'P' # First char identifying that this is a duration
@@ -116,8 +119,55 @@ def is_datetime(value):
     """
     # We should accept dates as datetimes, so if a 'T' is not present in the
     # input, parse the value as just a date
+
     value = str(value)
     if 'T' not in value:
-        return ISO8601_DATE_RE.fullmatch(value) is not None
+        match = ISO8601_DATE_RE.fullmatch(value)
     else:
-        return ISO8601_DATETIME_RE.fullmatch(value) is not None
+        match = ISO8601_DATETIME_RE.fullmatch(value)
+
+    # If the string did not match, return false. If it did match, we have to
+    # verify the components
+    if not match:
+        return False
+
+    # Get date from match
+    try:
+        date = _get_date(match)
+    except:
+        return False
+
+    return True
+
+
+def _get_date(match):
+    # Year must be in all matches, so this is safe
+    year = int(match['year'])
+    month = match.get('month', None)
+    day = match.get('day', None)
+    week = match.get('week', None)
+    weekday = match.get('weekday', None)
+
+    if month:
+        month = int(month)
+        day = int(day) if day else 1
+        if month not in range(1, 13):
+            raise ValueError('%d is not a valid month' % month)
+        _, days_in_month = calendar.monthrange(year, month)
+        if day > days_in_month:
+            raise ValueError('%d is not a valid day in %d-%d' % (year, month))
+        return date(year, month, day)
+    elif week:
+        week = int(week)
+        weekday = int(weekday) if weekday else 1
+    else:
+        return date(year, 1, 1)
+
+
+def _get_time(match):
+    hour = int(match.get('hour', '0'))
+    minute = int(match.get('minute', '0'))
+    second = match.get('second', '0')
+
+    if '.' in second:
+        second, fraction = second.split(',', 2)

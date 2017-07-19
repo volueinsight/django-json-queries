@@ -85,6 +85,7 @@ class Field(metaclass=FieldBase):
             func(value, lookup)
         else:
             self._check_type(value)
+            self.parse_value(value)
 
     def validate_in(self, value, lookup):
         if not isinstance(value, list):
@@ -92,13 +93,20 @@ class Field(metaclass=FieldBase):
 
         for i, item in enumerate(value):
             self._check_type(item)
+            self.parse_value(item)
 
     def _check_type(self, value):
         if not isinstance(value, self.input_type):
             raise ValueError('Please provide a valid value')
-        if int in self.input_type:
+        if int in self.input_type and bool not in self.input_type:
             if isinstance(value, bool):
                 raise ValueError('Please provide a valid value')
+
+    def parse_value(self, value):
+        """
+        Default implementation for parse_value, which does nothing.
+        """
+        return value
 
     def prepare(self, value, lookup):
         """
@@ -165,9 +173,7 @@ class RangeFieldBase(FieldBase):
 
 
 class RangeField(Field, metaclass=RangeFieldBase):
-    def validate(self, value, lookup):
-        super().validate(value, lookup)
-
+    def parse_value(self, value):
         # Validate the the value is within the allowed range
         if not value in self.value_range:
             raise ValueError('Value %s is not within range %s' % (
@@ -221,9 +227,7 @@ class ChoiceField(Field, metaclass=ChoiceFieldBase):
         desc['choices'] = cls.choices
         return desc
 
-    def validate(self, value, lookup):
-        super().validate(value, lookup)
-
+    def parse_value(self, value):
         # Validate that the given value is one of the allowed ones
         if not value in self.keys:
             raise ValueError('Please provide a valid value')
@@ -253,10 +257,7 @@ class DateField(Field):
     value_type = 'date'
     input_type = str
 
-    def validate(self, value, lookup):
-        # Let super validate the value type
-        super().validate(value, lookup)
-
+    def parse_value(self, value):
         # Check if a duration was provided
         if is_duration(value) or is_date(value):
             return
@@ -281,10 +282,7 @@ class TimeField(Field):
     value_type = 'time'
     input_type = str
 
-    def validate(self, value, lookup):
-        # Let super validate the value type
-        super().validate(value, lookup)
-
+    def parse_value(self, value):
         # Try to parse as a time
         if not is_time(value):
             raise ValueError('Please provide a valid time')
@@ -294,10 +292,7 @@ class DateTimeField(Field):
     value_type = 'datetime'
     input_type = str
 
-    def validate(self, value, lookup):
-        # Let super validate the value type
-        super().validate(value, lookup)
-
+    def parse_value(self, value):
         # Check if a duration was provided
         if is_duration(value) or is_datetime(value):
             return

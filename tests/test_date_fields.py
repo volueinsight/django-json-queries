@@ -31,6 +31,7 @@ LOOKUPS = {
     ('P-1Y', 'exact', True),
     ('P-1M', 'exact', True),
     ('P-1D', 'exact', True),
+    (['2017-01-01', '2018-01-01'], 'in', True),
 ])
 def test_date_field(input, lookup, should_succeed):
     field = DateField(lookups=LOOKUPS)
@@ -58,6 +59,7 @@ def test_date_field(input, lookup, should_succeed):
     ('23:59:59.99999', 'exact', True),
     ('23:59:59.999999', 'exact', True),
     ('23:59:59.9999999', 'exact', False),
+    (['12:00', '13:00'], 'in', True),
 ])
 def test_time_field(input, lookup, should_succeed):
     field = TimeField(lookups=LOOKUPS)
@@ -84,6 +86,8 @@ def test_time_field(input, lookup, should_succeed):
     ('P-1Y', 'exact', True),
     ('P-1M', 'exact', True),
     ('P-1D', 'exact', True),
+    (['2017-01-01', '2018-01-01'], 'in', True),
+    (['2017-01-01T00:00', '2018-01-01T00:00'], 'in', True),
 ])
 def test_datetime_field(input, lookup, should_succeed):
     field = DateTimeField(lookups=LOOKUPS)
@@ -96,6 +100,7 @@ def test_datetime_field(input, lookup, should_succeed):
     (-1, 'exact', True),
     (0, 'exact', True),
     (2000, 'exact', True),
+    ([2000, 2001], 'in', True),
 ])
 def test_year_field(input, lookup, should_succeed):
     field = YearField(lookups=LOOKUPS)
@@ -111,6 +116,7 @@ def test_year_field(input, lookup, should_succeed):
     (11, 'exact', True),
     (12, 'exact', True),
     (13, 'exact', False),
+    ([1, 2], 'in', True),
 ])
 def test_month_field(input, lookup, should_succeed):
     field = MonthField(lookups=LOOKUPS)
@@ -125,6 +131,7 @@ def test_month_field(input, lookup, should_succeed):
     (1, 'exact', True),
     (53, 'exact', True),
     (54, 'exact', False),
+    ([1, 2], 'in', True),
 ])
 def test_week_field(input, lookup, should_succeed):
     field = WeekField(lookups=LOOKUPS)
@@ -139,6 +146,7 @@ def test_week_field(input, lookup, should_succeed):
     (1, 'exact', True),
     (31, 'exact', True),
     (32, 'exact', False),
+    ([1, 2], 'in', True),
 ])
 def test_day_field(input, lookup, should_succeed):
     field = DayField(lookups=LOOKUPS)
@@ -153,6 +161,7 @@ def test_day_field(input, lookup, should_succeed):
     (1, 'exact', True),
     (7, 'exact', True),
     (8, 'exact', False),
+    ([1, 2], 'in', True),
 ])
 def test_week_day_field(input, lookup, should_succeed):
     field = WeekDayField(lookups=LOOKUPS)
@@ -167,6 +176,7 @@ def test_week_day_field(input, lookup, should_succeed):
     (10, 'exact', True),
     (23, 'exact', True),
     (24, 'exact', False),
+    ([1, 2], 'in', True),
 ])
 def test_hour_field(input, lookup, should_succeed):
     field = HourField(lookups=LOOKUPS)
@@ -181,6 +191,7 @@ def test_hour_field(input, lookup, should_succeed):
     (30, 'exact', True),
     (59, 'exact', True),
     (60, 'exact', False),
+    ([1, 2], 'in', True),
 ])
 def test_minute_field(input, lookup, should_succeed):
     field = MinuteField(lookups=LOOKUPS)
@@ -195,6 +206,7 @@ def test_minute_field(input, lookup, should_succeed):
     (30, 'exact', True),
     (59, 'exact', True),
     (60, 'exact', False),
+    ([1, 2], 'in', True),
 ])
 def test_second_field(input, lookup, should_succeed):
     field = SecondField(lookups=LOOKUPS)

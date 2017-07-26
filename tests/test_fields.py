@@ -7,13 +7,14 @@ from django_json_queries.fields import (
 )
 
 
-def run_test(field, input, lookup, should_succeed):
+def run_test(field, value, lookup, should_succeed):
     try:
-        field.validate(input, lookup)
+        field.validate(value, lookup)
         if not should_succeed:
-            assert False, 'Value should not be valid'
-    except Exception as e:
-        if should_succeed:
+            assert False, \
+                '"%s" should not be valid for field "%s"' % (value, field)
+    except ValueError as e:
+        if isinstance(e, AssertionError) or should_succeed:
             raise e
 
 
@@ -32,6 +33,8 @@ LOOKUPS = {
     (1321321, 'exact', True),
     (0.12312, 'exact', False),
     (412.321, 'exact', False),
+    (True, 'exact', False),
+    (False, 'exact', False),
     ([1,2], 'in', True),
     ([1], 'in', True),
     ([1, 1.5], 'in', False),
@@ -53,6 +56,8 @@ def test_integer_field(input, lookup, should_succeed):
     ([1,2], 'in', True),
     ([1, 1.5], 'in', True),
     ([1.0, 1.5], 'in', True),
+    (True, 'exact', False),
+    (False, 'exact', False),
 ])
 def test_float_field(input, lookup, should_succeed):
     field = FloatField(lookups=LOOKUPS)
